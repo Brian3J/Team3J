@@ -1,0 +1,209 @@
+// import {getCookie} from './cookie'
+
+ // let commonUrl = "http://192.168.1.150:8080/market-api/v1";
+// let commonUrl = 'https://landscape-api.taurus.cash/awclient'
+// let commonUrl = 'http://192.168.1.150:12200/cg/down'
+let reportBuriedPointUrl = "https://www.n92.in";
+
+
+
+function setCookie(cname,cvalue,exdays)
+{
+  var d = new Date();
+  d.setTime(d.getTime()+(exdays*24*60*60*1000));
+  var expires = "expires="+d.toGMTString();
+  document.cookie = cname + "=" + cvalue + "; " + expires;
+}
+
+
+function getCookie(name) {
+  var arr,
+    reg = new RegExp("(^| )" + name + "=([^;]*)(;|$)");
+  if ((arr = document.cookie.match(reg))) return unescape(arr[2]);
+  else return null;
+}
+
+Date.prototype.format = function (fmt) {
+  var o = {
+    "M+": this.getMonth() + 1, //月份
+    "d+": this.getDate(), //日
+    "h+": this.getHours(), //小时
+    "m+": this.getMinutes(), //分
+    "s+": this.getSeconds(), //秒
+    "q+": Math.floor((this.getMonth() + 3) / 3), //季度
+    S: this.getMilliseconds(), //毫秒
+  };
+  if (/(y+)/.test(fmt)) {
+    fmt = fmt.replace(
+      RegExp.$1,
+      (this.getFullYear() + "").substr(4 - RegExp.$1.length)
+    );
+  }
+  for (var k in o) {
+    if (new RegExp("(" + k + ")").test(fmt)) {
+      fmt = fmt.replace(
+        RegExp.$1,
+        RegExp.$1.length == 1 ? o[k] : ("00" + o[k]).substr(("" + o[k]).length)
+      );
+    }
+  }
+  return fmt;
+};
+
+
+
+let headers = {
+  "Content-Type": "application/json",
+  Accept: "application/json",
+};
+
+axios.interceptors.request.use(
+  function (config) {
+    removePending(config);
+    addPending(config);
+    return config;
+  },
+  function (error) {
+    return Promise.reject(error);
+  }
+);
+
+axios.interceptors.response.use(
+  function (response) {
+    // if(response.data.code == 403){
+    //     // alert()
+    //   showToast(response.data.msg,3000)
+    // }
+    removePending(response);
+    return response;
+  },
+  function (error) {
+    return Promise.reject(error);
+  }
+);
+
+// axios.defaults.headers.common["accessToken"] ="eyJhbGciOiJIUzUxMiJ9.eyJjb2RlIjoiM1FVeTAxQzIiLCJhY2NvdW50TnVtIjpudWxsLCJuaWNrbmFtZSI6InlrMTY5MjA4NzA4MDc3MyIsImlkIjoxNzUsInRva2VuIjoiM2EyYzVmYzMtNzY1My00ZjAwLWFiNGItMDNjNjdlOWUwMTY0In0.xuefv9eqMOr2_ajw5C-Q2zRGF25Cb407cXRoC9pidfqbr4WJF7B1Dibm32RWK3_-VvDf7mrUwU5IOC_cMeiZ1Q";
+axios.defaults.headers.common['accessToken'] = getCookie('token');
+// axios.defaults.headers.common['token'] ='eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzUxMiJ9.eyJzdWIiOiIxMTAyMTM3NjkxNyIsImlhdCI6MTY2NTk5NDY4MSwiZXhwIjoxNTY5MzA3NTk0NjgxfQ.fWsw_oovuoFCVw-08xBjtuzVKIFKRSqXvL7sp98oPzeAwq9Pec0XKO30uHaAgTahhylIrzCkU0o894_bqUVLBQ'
+
+
+
+function showToast(msg, duration) {
+  duration = isNaN(duration) ? 3000 : duration;
+  var m = document.createElement("div");
+  m.innerHTML = msg;
+  m.style.cssText =
+    "width:3rem; padding: 0.2rem 0; background: linear-gradient(180deg, #5354EE, #8A42D3); font-size: 0.24rem; height:auto;min-height: 30px; color:#fff; line-height:30px; text-align:center; border-radius:0.1rem; position:fixed; top:40%; left:40%; z-index:999999;";
+  document.body.appendChild(m);
+  setTimeout(function () {
+    var d = 0.5;
+    m.style.webkitTransition =
+      "-webkit-transform " + d + "s ease-in, opacity " + d + "s ease-in";
+    m.style.opacity = "0";
+    setTimeout(function () {
+      document.body.removeChild(m);
+    }, d * 1000);
+  }, duration);
+}
+
+function copyToast(msg, duration) {
+  duration = isNaN(duration) ? 3000 : duration;
+  var m = document.createElement("div");
+  m.innerHTML = msg;
+  m.style.cssText =
+    "width:2.5rem; padding:0.1rem 0; background: #fff; font-size: 0.2rem;text-align:center; border-radius:0.1rem; position:fixed; bottom:10%; left:38%; z-index:999999;";
+  document.body.appendChild(m);
+  setTimeout(function () {
+    var d = 0.5;
+    m.style.webkitTransition =
+      "-webkit-transform " + d + "s ease-in, opacity " + d + "s ease-in";
+    m.style.opacity = "0";
+    setTimeout(function () {
+      document.body.removeChild(m);
+    }, d * 1000);
+  }, duration);
+}
+
+
+function postRequest(url, data) {
+  let result = axios({
+    method: "post",
+    url: url,
+    data: JSON.stringify(JSON.parse(data)),
+    baseURL: commonUrl,
+    headers: headers,
+  })
+    .then((resp) => {
+      return resp.data;
+    })
+    .catch((error) => {
+      return "exception=" + error;
+    });
+  return result;
+}
+
+//get请求
+function getRequest(url, params) {
+  var result = axios({
+    method: "get",
+    url: url,
+    params: params,
+    baseURL: commonUrl,
+  })
+    .then(function (resp) {
+      return resp.data;
+    })
+    .catch(function (error) {
+      return "exception=" + error;
+    });
+  return result;
+}
+
+//打点请求
+function reportBuriedPointRequest(url, data) {
+  let result = axios({
+    method: "post",
+    url: url,
+    data: JSON.stringify(JSON.parse(data)),
+    baseURL: reportBuriedPointUrl,
+    headers: headers,
+  })
+    .then((resp) => {
+      return resp.data;
+    })
+    .catch((error) => {
+      return "exception=" + error;
+    });
+  return result;
+}
+
+const pending = new Map();
+
+function addPending(config) {
+  const url = [config.method, config.url].join("&");
+  config.cancelToken =
+    config.cancelToken ||
+    axios.CancelToken((cancel) => {
+      if (!pending.has(url)) {
+        // 如果 pending 中不存在当前请求，则添加进去
+        pending.set(url, cancel);
+      }
+    });
+}
+
+function removePending(config) {
+  const url = [config.method, config.url].join("&");
+  if (pending.has(url)) {
+    // 如果在 pending 中存在当前请求标识，需要取消当前请求，并且移除
+    const cancel = pending.get(url);
+    cancel(url);
+    pending.delete(url);
+  }
+}
+
+function clearPending() {
+  for (const [url, cancel] of pending) {
+    cancel(url);
+  }
+  pending.clear();
+}
